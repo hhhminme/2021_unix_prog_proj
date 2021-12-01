@@ -75,7 +75,8 @@ int main(int argc, char** argv)
 	clnt_pid = getpid();
 
 	while(1){
-		printf("--------------------\n1 = 좌석현황 보기\n2 = 반납or예약\n3 = 종료\n--------------------\n\n명령  입력 : ");
+		printf("\n안녕하세요! 산기시네마입니다.!\n");
+		printf("--------------------\n1 = 좌석현황 보기\n2 = 예약 및 예약취소\n3 = 종료하기\n--------------------\n\n명령  입력 : ");
                 scanf("%d", &menu);
 
 		switch(menu){
@@ -91,9 +92,9 @@ int main(int argc, char** argv)
 
 		case 2 : // 반납 or 예약
 			if (myseat > 0)
-				printf("현재 선점하고 있는 좌석 : %d번\n", myseat);
+				printf("현재 예약한 좌석 : %d번\n", myseat);
 			else
-				printf("현재 선점하고 있는 좌석이 없습니다.\n");
+				printf("현재 예약한 좌석이 없습니다.\n");
 			printf("좌석 번호를 입력해주세요 : ");
 			scanf("%d", &n);
 
@@ -106,11 +107,11 @@ int main(int argc, char** argv)
 				recv_result(); // 결과 값을 받음
 
 				if(rsbuf.result == 0) // 이미 누군가가 선점한 자리였다면
-					printf("이미 예약된 자리입니다. 다른 자리를 선택하세요\n");
+					printf("이미 예약된 좌석입니다. 다른 좌석를 선택하세요\n");
 				else{ // 아니면 선점 가능
 					flag = 1;
 					myseat = n;
-					printf("%d번 자리 예약 완료\n", myseat);
+					printf("%d번 좌석 예약 완료\n", myseat);
 					pthread_create(&time_thread, NULL, time_on, NULL); // timer 실행
 					pthread_detach(time_thread);
 				}
@@ -118,7 +119,7 @@ int main(int argc, char** argv)
 			}
 			else{ // 이미 선점하고 있는 좌석이 있음
 				if(myseat != n) // 다른 자리 예약 시도
-					printf("이미 예약한 자리가 있습니다. 반납 먼저 해주세요.\n");
+					printf("이미 예약한 좌석이 있습니다. 좌석 예약 취소를 해주세요.\n");
 				else{ // 반납
 					pthread_mutex_lock(&mutex); // mutex lock
 					pthread_create(&send_thread, NULL, write_input, (void*)&n); // send_thread로 반납하고자 하는 좌석 번호를 보냄
@@ -127,13 +128,13 @@ int main(int argc, char** argv)
 					recv_result(); // 결과값 받음
 
 					if(rsbuf.result == 1){
-						printf("자리를 반납하였습니다.\n");
+						printf("예약 취소 하였습니다.\n");
 						flag = 0; // 반납 후, flag = 0, myseat = -1로 초기화
 						myseat = -1;
 						pthread_cancel(time_thread); // 좌석을 반납했으므로 타이머는 취소
 					}
 					else
-						printf("반납실패\n");
+						printf("예약 실패\n");
 					pthread_mutex_unlock(&mutex); // mutex unlock
 				}
 			}
@@ -149,7 +150,7 @@ int main(int argc, char** argv)
 				if(rsbuf.result == 1){
 					flag = 0; // 반납 후, flag = 0, myseat = -1로 초기화
 					myseat = -1;
-					printf("자리를 반납하였습니다.\n");
+					printf("예약을 취소하셨습니다.\n");
 					printf("프로그램을 종료합니다\n");
 				}
 				pthread_mutex_unlock(&mutex); // mutex unlock
@@ -174,9 +175,29 @@ void* read_data()
 		perror("msgrcv error : ");
 		return 0;
 	}
-	printf("열람실 좌석 정보입니다.\n");
+	printf("산기시네마 좌석 정보입니다.\n");
 	for (int i = 0; i < sizeof(rcvbuf.arr) / sizeof(int); i++) {
-		printf("%d번 좌석 : %d \n",i+1, rcvbuf.arr[i]); // 좌석 정보 출력
+		int moduler = i / 10;
+		switch(moduler){
+			case 0 :
+				printf("A열 %02d번 좌석 : [%d] ",i+1, rcvbuf.arr[i]);
+				break;
+			case 1 :
+				printf("B열 %d번 좌석 : [%d] ",i+1, rcvbuf.arr[i]);
+				break;
+			case 2 :
+				printf("C열 %d번 좌석 : [%d] ",i+1, rcvbuf.arr[i]);
+				break;
+			case 3 :
+				printf("E열 %d번 좌석 : [%d] ",i+1, rcvbuf.arr[i]);
+				break;
+			case 4 :
+				printf("E열 %d번 좌석 : [%d] ",i+1, rcvbuf.arr[i]);
+				break;
+		}
+		if(i%10 == 9){
+			printf("\n");
+		}		
 	}
 	pthread_exit(NULL);
 }
