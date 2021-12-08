@@ -56,9 +56,9 @@ int main(void)
 	struct sigaction sigact, inter;
 
 	// Message queue 생성
-	key_id = msgget((key_t)60021, IPC_CREAT | 0666); // send용 queue
-	key_id2 = msgget((key_t)60022, IPC_CREAT | 0666); // recv용 queue
-	key_id3 = msgget((key_t)60023, IPC_CREAT | 0666); // result send용 queue
+	key_id = msgget((key_t)60081, IPC_CREAT | 0666); // send용 queue
+	key_id2 = msgget((key_t)60082, IPC_CREAT | 0666); // recv용 queue
+	key_id3 = msgget((key_t)60083, IPC_CREAT | 0666); // result send용 queue
 
 	// Message queue 생성 확인
 	if (key_id < 0 || key_id2 < 0 || key_id3 < 0) {
