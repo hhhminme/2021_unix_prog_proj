@@ -46,9 +46,9 @@ int main(int argc, char** argv)
 	double accum;
 	
 	// Message queue 생성
-	key_id = msgget((key_t)60081, IPC_CREAT | 0666); // recv용 queue
-        key_id2 = msgget((key_t)60082, IPC_CREAT | 0666); // send용 queue
-        key_id3 = msgget((key_t)60083, IPC_CREAT | 0666); // result recv용 queue
+	key_id = msgget((key_t)60084, IPC_CREAT | 0666); // recv용 queue
+        key_id2 = msgget((key_t)60085, IPC_CREAT | 0666); // send용 queue
+        key_id3 = msgget((key_t)60086, IPC_CREAT | 0666); // result recv용 queue
 
 	if (key_id < 0 || key_id2 < 0 || key_id3 < 0) {
 		perror("msgget error : ");
