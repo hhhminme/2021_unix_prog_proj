@@ -1,5 +1,6 @@
 // shared memory - client
 #include "shm.h"
+#define BILLION 1000000000L;
 
 struct recvbuf {
 	int arr[50]; // 좌석 정보, 0이면 빈자리, 1이면 예약됨
@@ -39,6 +40,8 @@ int main(int argc, char** argv)
 {
 	int menu, m, n;
 	struct sigaction sigact, sigact_cli;
+	struct timespec start,stop;
+	double accum;
 	
 	// Shared Memory 할당
 	key_id = shmget((key_t)60080, sizeof(struct recvbuf), IPC_CREAT | 0666); // recv용
@@ -105,11 +108,25 @@ int main(int argc, char** argv)
 		switch (menu) {
 
 		case 1: // 좌석 정보 얻기
+			// 시간측정시작
+			if (clock_gettime(CLOCK_MONOTONIC, &start) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
 			m = -1;
 			pthread_create(&send_thread, NULL, write_input, (void*)&m); // 서버에게 -1 이라는 요청값을 보냄
 			pthread_join(send_thread, NULL);	
 			pthread_create(&recv_thread, NULL, read_data, NULL); // 좌석 정보 얻는 쓰레드 수행
 			pthread_join(recv_thread, NULL);
+			
+			// 시간측정종료
+			if (clock_gettime(CLOCK_MONOTONIC, &stop) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
+
+			accum = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)BILLION;
+			printf("걸린 시간 : %.9f\n", accum);
 			break;
 
 		case 2: // 반납 or 예약
@@ -119,6 +136,12 @@ int main(int argc, char** argv)
 				printf("현재 예약한 좌석이 없습니다.\n");
 			printf("좌석 번호를 입력해주세요 : ");
 			scanf("%d", &n);
+
+			// 시간측정시작
+			if (clock_gettime(CLOCK_MONOTONIC, &start) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
 
 			if (flag == 0) { // 선점하고있는 좌석이 없으면
 				pthread_mutex_lock(&mutex); // 뮤텍스 lock - 공유 변수인 좌석 값을 write 하기 때문에 mutex로 임계영역을 보호해야한다.
@@ -160,9 +183,24 @@ int main(int argc, char** argv)
 					pthread_mutex_unlock(&mutex); // mutex unlock
 				}
 			}
+
+			// 시간측정종료
+			if (clock_gettime(CLOCK_MONOTONIC, &stop) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
+
+			accum = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)BILLION;
+			printf("걸린 시간 : %.9f\n", accum);			
 			break;
 
 		case 3: // 종료
+			// 시간측정시작
+			if (clock_gettime(CLOCK_MONOTONIC, &start) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
+
 			if (flag == 1) {
 				pthread_mutex_lock(&mutex); // 종료전 반납을 위해 mutex lock
 				pthread_create(&send_thread, NULL, write_input, (void*)&myseat); // 반납할 좌석 번호를 서버에게 보냄
@@ -182,6 +220,14 @@ int main(int argc, char** argv)
 				pthread_mutex_unlock(&mutex); // mutex unlock
 			}
 			pthread_cancel(time_thread); // 타이머 쓰레드 취소
+			// 시간측정종료
+			if (clock_gettime(CLOCK_MONOTONIC, &stop) == -1){
+				perror("clock gettime");
+				return EXIT_FAILURE;
+			}
+
+			accum = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)BILLION;
+			printf("걸린 시간 : %.9f\n", accum);
 			pthread_exit(NULL); // 메인 쓰레드 exit
 			break;
 
@@ -241,7 +287,10 @@ void recv_result() {
 
 // 서버가 공유메모리에 데이터 다 쓸 때까지 기다림
 void wait_result(){
-	while (is_done != 1)	// is_done이 1이 될 때까지 반복
+	// is_done이 1이 될 때까지 반복
+	while (is_done != 1){
+		printf("wait...\n");
+	}	
 	is_done = 0;	// is_done 초기화
 	pthread_exit(NULL);	// 쓰레드 종료
 }
